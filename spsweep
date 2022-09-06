@@ -10,17 +10,34 @@ do
     esac
 done
 
+cidr_present=$(echo $ip_addr | awk -F '/' '{ print $2;}')
+
 if [ -z "$ip_addr" ]
 then
 echo -e "Usage
-  spingsweep [options] -i <destination>\n
+  spsweep [options] -i <destination>\n
 \nOptions:
  <destination>      ip address
+ -i <destination>   scan hosts under the ip
+ -A <t>             scan all active hosts under the ip
+ -h                 print this help
 ";
 else
-last=$(echo $ip_addr | sed -r 's!/.*!!; s!.*\.!!');
-fthree=$(echo $ip_addr | awk -F '.' '{ print $1"."$2"."$3;}');
-echo "Active hosts";
-for i in $(seq 254); do ping $fthree.$i -c1 -W1 & done | grep from | awk -v RS='([0-9]+\\.){3}[0-9]+' 'RT{print RT}'
+
+	if [ -z "$all_hosts" ]
+	then
+		last=$(echo $ip_addr | sed -r 's!/.*!!; s!.*\.!!');
+		fthree=$(echo $ip_addr | awk -F '.' '{ print $1"."$2"."$3;}');
+		echo "Active hosts in range $last to 254";
+		output=$(for i in $(seq 254); do echo "$(ping $fthree.$i -c1 -W1)" & done | grep from | awk -v RS='([0-9]+\\.){3}[0-9]+' 'RT{print RT}' | awk -v cutoff="$last" -F '.' '$4 >= cutoff');
+		echo "$output"
+	else
+		last=$(echo $ip_addr | sed -r 's!/.*!!; s!.*\.!!');
+		fthree=$(echo $ip_addr | awk -F '.' '{ print $1"."$2"."$3;}');
+		echo "Active hosts in range 0 to 254";
+		output=$(for i in $(seq 254); do echo "$(ping $fthree.$i -c1 -W1)" & done | grep from | awk -v RS='([0-9]+\\.){3}[0-9]+' 'RT{print RT}');
+		echo "$output"
+	fi
+
 
 fi
