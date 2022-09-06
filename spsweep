@@ -1,0 +1,26 @@
+#!/bin/bash
+
+while getopts i:c:A:h flag
+do
+    case "${flag}" in
+        i) ip_addr=${OPTARG};;
+        c) cidr=${OPTARG};;
+        A) all_hosts=${OPTARG};;
+	h) help=${OPTARGS};;
+    esac
+done
+
+if [ -z "$ip_addr" ]
+then
+echo -e "Usage
+  spingsweep [options] -i <destination>\n
+\nOptions:
+ <destination>      ip address
+";
+else
+last=$(echo $ip_addr | sed -r 's!/.*!!; s!.*\.!!');
+fthree=$(echo $ip_addr | awk -F '.' '{ print $1"."$2"."$3;}');
+echo "Active hosts";
+for i in $(seq 254); do ping $fthree.$i -c1 -W1 & done | grep from | awk -v RS='([0-9]+\\.){3}[0-9]+' 'RT{print RT}'
+
+fi
